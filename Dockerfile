@@ -34,7 +34,7 @@
 # 4. The Hugging Face dependency (#414). The build used to download the classifier from
 #    huggingface.co. Runtime was already safe, since the weights are baked in and the Hub is
 #    switched off, but a REBUILD was not, and the archive notice covers the models as well as the
-#    code. The weights now come from images/llm-guard-model in our own registry, pinned by digest.
+#    code. The weights now come from model/ in our own registry, pinned by digest.
 #
 # WHY THE SOURCE IS VENDORED
 #
@@ -44,8 +44,8 @@
 # archived repository staying reachable. 40 KB of Python removes that. See #414 for the same argument
 # applied to the model weights, which are now mirrored too.
 #
-# Build and push (from the repo root):
-#   docker build -t ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.3 images/llm-guard
+# Build and push (from this repo's root):
+#   docker build -t ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.3 .
 #   docker push ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.3
 
 # ---------------------------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ RUN python -m spacy download en_core_web_sm
 
 # The classifier comes from OUR mirror, not from Hugging Face (#414). The weights are
 # deberta-v3-base-prompt-injection-v2 at revision 90c9989b, Apache-2.0, published as
-# images/llm-guard-model and pinned by digest above so the builder enforces it. Nothing in this
+# model/ and pinned by digest above so the builder enforces it. Nothing in this
 # build reaches huggingface.co any more: the upstream project was archived on 2026-07-08 and the
 # archive notice covers the models, so a build that depends on that org staying alive is a build
 # that stops working on somebody else's schedule.

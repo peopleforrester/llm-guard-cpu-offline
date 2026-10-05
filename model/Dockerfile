@@ -3,7 +3,7 @@
 #
 # WHY (#414)
 #
-# images/llm-guard/Dockerfile used to fetch protectai/deberta-v3-base-prompt-injection-v2 from
+# The guard Dockerfile at this repo's root used to fetch protectai/deberta-v3-base-prompt-injection-v2 from
 # huggingface.co at build time. Runtime was already safe, because the weights are baked in and the Hub
 # is switched off, but a rebuild was not: Palo Alto Networks archived the upstream project on
 # 2026-07-08 and the archive notice covers the Hugging Face models as well as the code. Nothing obliges
@@ -27,8 +27,8 @@
 # Apache-2.0 requires the license and any NOTICE to travel with a redistributed work, so LICENSE.model
 # sits beside the weights in this image.
 #
-# Build and push (from the repo root):
-#   docker build -t ghcr.io/peopleforrester/watch-it-burn:llm-guard-model-90c9989b images/llm-guard-model
+# Build and push (from this repo's root):
+#   docker build -t ghcr.io/peopleforrester/watch-it-burn:llm-guard-model-90c9989b model
 #   docker push ghcr.io/peopleforrester/watch-it-burn:llm-guard-model-90c9989b
 #
 # The source of the weights is the previous guard image rather than the Hub, on purpose: it copies the
