@@ -181,3 +181,19 @@ requests. The image E2E checks the installed api version and `/metrics` through 
 | uv | 0.13.6 (2026-10-27) | Builder stage only: applies `overrides.txt`, which pip cannot. Current release. |
 | opentelemetry-api, -sdk, -exporter-otlp-proto-http | 1.45.1 (2026-10-06) | First release with the tracestate fix; current. |
 | opentelemetry-instrumentation-fastapi, -exporter-prometheus | 0.66b1 (2026-10-06) | Cut with 1.45.1, and they pin it. |
+
+## 2026-10-29: the zero-shot weights image reads the Hub, checksum-pinned
+
+`model-zero-shot/` mirrors MoritzLaurer/deberta-v3-base-zeroshot-v2.0 at the revision llm-guard 0.3.16
+pins for BanTopics. `model/` copies its bytes from an earlier guard image of ours, but no image of ours
+has ever carried these weights, so the mirror has to read them from Hugging Face once. It does so with
+`ADD --checksum=sha256:...` per file in a scratch stage: the builder refuses any byte that differs, the
+image still executes nothing, and no download tool enters the build. The guard Dockerfile itself keeps
+its rule of never touching the Hub; it will take these weights by digest from the pushed mirror.
+
+The E2E suite reads the same seven URLs and checksums out of `model-zero-shot/Dockerfile`, so it scans
+the bytes the mirror will hold. Its scan session starts the API from the shipped `config/scanners.yml`
+with one BanTopics scanner appended, `model_path: ${WIB_ZS_MODEL_DIR}`, so the injection, auth and
+telemetry tests run with both scanners loaded. The shipped config gains BanTopics only once the guard
+image carries the weights, because with `lazy_load: false` a missing model stops the start. No new
+dependency.

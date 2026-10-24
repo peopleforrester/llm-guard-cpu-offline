@@ -1,0 +1,58 @@
+This image redistributes model weights obtained from Hugging Face.
+
+  Model:     MoritzLaurer/deberta-v3-base-zeroshot-v2.0
+  Revision:  8e7e5af5983a0ddb1a5b45a38b129ab69e2258e8
+  Files:     the onnx/ directory at that revision, placed at the top level
+  Base:      microsoft/deberta-v3-base
+  License:   MIT (as declared on the model card at that revision)
+  Author:    Moritz Laurer, as named on the model card
+  Used by:   llm-guard 0.3.16, BanTopics scanner (MODEL_DEBERTA_BASE_V2)
+  Mirrored:  2026-10-24, from https://huggingface.co at the revision above
+
+File integrity. For model.onnx and spm.model the sha256 was read from the Hugging
+Face API for that revision (the LFS object id) and independently computed from the
+downloaded files, and they agree. The other five files are plain git blobs: their
+git object ids from the API agree with the downloaded bytes, and the sha256 below
+was computed from those bytes. The image build pins every file to these hashes.
+
+  added_tokens.json        sha256 dc046d04c9b0ada7ae6f1dc89c465801799acdf0c9a6aab8c15a1b2d5ca4e91f
+  config.json              sha256 a68162c0b02cd39759732b33d26ee2868cb64701b0b9255fee4f55fd9d5609f4
+  model.onnx               sha256 d46fa6c1addc598abd34af8651120291f51417ddfce45b9d5f70bc32d3efa81c
+  special_tokens_map.json  sha256 b2f1b2f15f29a6b6d9d6ea4eca1675d2c231a71477f151d48f79cc83a625ba21
+  spm.model                sha256 c679fbf93643d19aab7ee10c0b99e460bdbc02fedf34b92b05af343b4af586fd
+  tokenizer.json           sha256 bfead76cd475f67849a6710fdd16497f75732773e4d90e40d3b5bb5d3f031df9
+  tokenizer_config.json    sha256 f5a1a74a632c0e9225e09a21ddf60c2e70ef5d3bfc1f261a24fd8ddab27254d2
+
+No modification has been made to the weights.
+
+The repository at that revision carries no LICENSE file. Its model card declares
+`license: mit` in its metadata and says, under "License": "The foundation model was
+published under the MIT license. The licenses of the training data vary depending
+on the model, see above." The card also says that models without "-c" in the name,
+this one included, "include data with non-commercial licenses" in their training
+data, that "legal opinions diverge if this training data affects the license of the
+trained model", and that "for users with strict legal requirements, the models with
+'-c' in the title are recommended." The card names no copyright holder. The MIT
+License terms follow.
+
+--------------------------------------------------------------------------------
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

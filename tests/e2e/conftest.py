@@ -15,13 +15,19 @@ def pytest_sessionstart(session):
     else:
         raise pytest.UsageError("E2E tests reached the network; run them through tests/e2e/run.sh")
 
-    model_dir = os.environ.get("WIB_PI_MODEL_DIR")
-    if not model_dir or not (Path(model_dir) / "model.onnx").is_file():
-        raise pytest.UsageError(
-            f"WIB_PI_MODEL_DIR={model_dir!r} holds no model.onnx; run through tests/e2e/run.sh"
-        )
+    for variable in ["WIB_PI_MODEL_DIR", "WIB_ZS_MODEL_DIR"]:
+        model_dir = os.environ.get(variable)
+        if not model_dir or not (Path(model_dir) / "model.onnx").is_file():
+            raise pytest.UsageError(
+                f"{variable}={model_dir!r} holds no model.onnx; run through tests/e2e/run.sh"
+            )
 
 
 @pytest.fixture(scope="session")
 def model_dir() -> str:
     return os.environ["WIB_PI_MODEL_DIR"]
+
+
+@pytest.fixture(scope="session")
+def zero_shot_dir() -> str:
+    return os.environ["WIB_ZS_MODEL_DIR"]
