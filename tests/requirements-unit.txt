@@ -1,0 +1,6 @@
+pytest==9.1.1
+ruff==0.17.2
+# The two below match src/pyproject.toml's pins, so the loader is tested against what the image runs.
+pydantic==2.11.4
+pyyaml==6.0.2
+structlog==26.1.0

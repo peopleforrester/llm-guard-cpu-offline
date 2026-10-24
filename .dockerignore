@@ -1,0 +1,6 @@
+# ABOUTME: Keeps the E2E environment and local build leftovers out of the build context; no
+# ABOUTME: Dockerfile COPYs any of them.
+.e2e
+src/build
+src/*.egg-info
+**/__pycache__

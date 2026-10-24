@@ -1,0 +1,4 @@
+/.e2e/
+/src/build/
+/src/*.egg-info/
+__pycache__/
