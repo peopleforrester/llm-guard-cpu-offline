@@ -1,28 +1,33 @@
 #!/usr/bin/env bash
-# ABOUTME: End-to-end run: installs the API the way the Dockerfile does (CPU torch first), fetches the
-# ABOUTME: pinned weights, then scans in a network namespace with no network, as a default-deny pod does.
+# ABOUTME: End-to-end run: installs the API the way the Dockerfile does and scans it with no network, then
+# ABOUTME: builds the image itself and scans through it under --network none, as a default-deny pod does.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WORK="$REPO_ROOT/.e2e"
 VENV="$WORK/venv"
 WEIGHTS="$WORK/models/prompt-injection"
+IMAGE="llm-guard-cpu-offline:e2e"
 
-for tool in uv unshare; do
+for tool in uv unshare docker; do
   command -v "$tool" >/dev/null || { echo "E2E needs $tool on PATH" >&2; exit 1; }
 done
 unshare -rn true || {
   echo "E2E needs unprivileged user and network namespaces (unshare -rn) to run with no network" >&2
   exit 1
 }
+docker info >/dev/null || {
+  echo "E2E needs a container runtime that can build and run images: 'docker info' failed" >&2
+  exit 1
+}
 
 TORCH_PIN="$(grep -o 'torch==[0-9][0-9.]*' "$REPO_ROOT/Dockerfile")"
 [ "$(wc -l <<<"$TORCH_PIN")" -eq 1 ] || { echo "Expected one torch pin in Dockerfile" >&2; exit 1; }
 
-echo "[1/4] Python 3.12 environment in $VENV"
+echo "[1/6] Python 3.12 environment in $VENV"
 [ -x "$VENV/bin/python" ] || uv venv --quiet --python 3.12 "$VENV"
 
-echo "[2/4] $TORCH_PIN from the PyTorch CPU index, then src[cpu], as the Dockerfile installs them"
+echo "[2/6] $TORCH_PIN from the PyTorch CPU index, then src[cpu], as the Dockerfile installs them"
 uv pip install --python "$VENV/bin/python" "$TORCH_PIN" --index-url https://download.pytorch.org/whl/cpu
 uv pip install --python "$VENV/bin/python" "$REPO_ROOT/src[cpu]" -r "$REPO_ROOT/tests/e2e/requirements.txt"
 "$VENV/bin/python" - <<'EOF'
@@ -32,14 +37,20 @@ if cuda:
     raise SystemExit(f"CUDA packages resolved into a CPU-only install: {cuda}")
 EOF
 
-echo "[3/4] Weights from the model image pinned in Dockerfile"
+echo "[3/6] Weights from the model image pinned in Dockerfile"
 "$VENV/bin/python" -I "$REPO_ROOT/tests/e2e/fetch_weights.py" "$WEIGHTS"
 
-echo "[4/4] Scanning with no network"
+echo "[4/6] Scanning with no network"
 cd "$REPO_ROOT"
-exec unshare -rn env \
+unshare -rn env \
   WIB_PI_MODEL_DIR="$WEIGHTS" \
   HF_HUB_OFFLINE=1 \
   TRANSFORMERS_OFFLINE=1 \
   HF_DATASETS_OFFLINE=1 \
   "$VENV/bin/python" -m pytest tests/e2e "$@"
+
+echo "[5/6] Building the image as $IMAGE"
+docker build --tag "$IMAGE" "$REPO_ROOT"
+
+echo "[6/6] Scanning through the image under --network none"
+E2E_IMAGE="$IMAGE" "$VENV/bin/python" -m pytest tests/image "$@"

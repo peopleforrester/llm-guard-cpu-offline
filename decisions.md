@@ -18,6 +18,13 @@ nor llm-guard: it checks the Dockerfiles statically and exercises the config loa
 
 The E2E suite installs torch from the CPU index and then `src[cpu]`, in the Dockerfile's order and
 with the Dockerfile's torch pin, fetches the weights from the model image the Dockerfile pins by
-digest, and scans inside `unshare -rn`. It does not build the image: building needs a container
-runtime with subordinate uids, which the agent sandbox does not have, and the property under test,
-scanning with no network, is a property of the install and the weights rather than of the layers.
+digest, and scans inside `unshare -rn`.
+
+## 2026-10-24: the E2E builds the image
+
+The venv scan cannot see layer-level regressions, such as a missing COPY into the runtime stage, so
+`tests/e2e/run.sh` then runs `docker build`, starts the image with `--network none` and the
+PromptInjection-only config copied in, and scans through `docker exec` (`tests/image/`). It needs a
+`docker` CLI that can build and run, and fails before installing anything when `docker info` does
+not answer. The agent sandbox has no such runtime (docker.sock is permission-denied, and rootless
+podman lacks a subordinate uid range), so the full E2E runs only on a host that has one.
