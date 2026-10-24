@@ -79,6 +79,12 @@ def test_runtime_ships_the_upstream_license_and_the_entrypoint():
     assert DOCKERFILE.final.args_of("ENTRYPOINT") == ['["./entrypoint.sh"]']
 
 
+def test_runtime_default_config_is_the_offline_one_not_the_vendored_one():
+    copies = DOCKERFILE.final.args_of("COPY")
+    configs = [c for c in copies if c.endswith(" ./config/scanners.yml")]
+    assert configs == ["--chown=user:user config/scanners.yml ./config/scanners.yml"], copies
+
+
 def test_every_copied_source_exists_in_the_repository():
     for stage in DOCKERFILE.stages:
         for copy in stage.args_of("COPY"):
