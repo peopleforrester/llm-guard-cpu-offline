@@ -139,8 +139,10 @@ COPY --chown=user:user src/app ./app
 COPY --chown=user:user src/pyproject.toml ./pyproject.toml
 COPY --chown=user:user src/LICENSE.upstream ./LICENSE.upstream
 # A default config so the image runs standalone. In the cluster this path is a ConfigMap mount
-# (gitops/ai-layer/resources.yaml) and the file below is shadowed.
-COPY --chown=user:user src/config/scanners.yml ./config/scanners.yml
+# (gitops/ai-layer/resources.yaml) and the file below is shadowed. It is ours, not upstream's
+# src/config/scanners.yml: that one enables scanners whose models come from huggingface.co on the
+# first scan, while this one runs PromptInjection alone, from WIB_PI_MODEL_DIR.
+COPY --chown=user:user config/scanners.yml ./config/scanners.yml
 COPY --chown=user:user --chmod=755 src/entrypoint.sh ./entrypoint.sh
 
 # Nothing reaches the Hub at runtime. The scanner loads from WIB_PI_MODEL_DIR with local_files_only.

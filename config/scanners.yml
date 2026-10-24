@@ -1,0 +1,42 @@
+# ABOUTME: The image's default config: upstream's app, auth and telemetry settings, with only the
+# ABOUTME: PromptInjection scanner, loaded from the baked-in classifier so the image scans with no network.
+#
+# This file replaces src/config/scanners.yml in the image, which stays as upstream wrote it. Upstream's
+# default enables about thirty scanners, and every scanner other than PromptInjection fetches its
+# model from huggingface.co on first use, so with no network the first scan failed. PromptInjection is
+# the one model this image carries: model_path loads it from WIB_PI_MODEL_DIR with local_files_only.
+# lazy_load is off so the classifier loads at start and a missing model fails the start, not a scan.
+app:
+  name: ${APP_NAME:LLM Guard API}
+  log_level: ${LOG_LEVEL:INFO}
+  log_json: ${LOG_JSON:true}
+  scan_fail_fast: ${SCAN_FAIL_FAST:false}
+  scan_prompt_timeout: ${SCAN_PROMPT_TIMEOUT:30}
+  scan_output_timeout: ${SCAN_OUTPUT_TIMEOUT:30}
+  lazy_load: ${LAZY_LOAD:false}
+
+rate_limit:
+  enabled: ${RATE_LIMIT_ENABLED:false}
+  limit: ${RATE_LIMIT_LIMIT:100/minute}
+
+auth:
+ type: http_bearer
+ token: ${AUTH_TOKEN:}
+
+tracing:
+  exporter: ${TRACING_EXPORTER:console}
+  endpoint: ${TRACING_OTEL_ENDPOINT:}  # Example: "<traces-endpoint>/v1/traces"
+
+metrics:
+  exporter: ${METRICS_TYPE:prometheus}
+  endpoint: ${METRICS_ENDPOINT:}  # Example: "<metrics-endpoint>/v1/metrics"
+
+input_scanners:
+  - type: PromptInjection
+    params:
+      threshold: 0.92
+      match_type: truncate_head_tail
+      model_max_length: 256
+      model_path: ${WIB_PI_MODEL_DIR}
+
+output_scanners: []

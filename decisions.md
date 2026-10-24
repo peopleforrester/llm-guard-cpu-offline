@@ -21,3 +21,16 @@ with the Dockerfile's torch pin, fetches the weights from the model image the Do
 digest, and scans inside `unshare -rn`. It does not build the image: building needs a container
 runtime with subordinate uids, which the agent sandbox does not have, and the property under test,
 scanning with no network, is a property of the install and the weights rather than of the layers.
+
+## 2026-10-24: the image's default config is ours, not upstream's
+
+Issue #3: the image copied upstream's `src/config/scanners.yml`, which enables about thirty scanners.
+Every one but PromptInjection fetches its model from huggingface.co on first use, so under
+`--network none` the first scan failed even though the image reported healthy.
+
+The image now copies `config/scanners.yml`, a packaging-owned file: upstream's `app`, `rate_limit`,
+`auth`, `tracing` and `metrics` sections unchanged except `lazy_load`, PromptInjection alone with
+`model_path: ${WIB_PI_MODEL_DIR}`, and no output scanners. `src/config/scanners.yml` stays verbatim,
+because `src/` is a verbatim copy of upstream. `lazy_load` defaults to false, as in the cluster's
+ConfigMap, so a missing model fails the start instead of the first scan. The E2E suite scans with
+this file rather than a config written for the test.

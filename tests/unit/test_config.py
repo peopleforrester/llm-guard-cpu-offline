@@ -1,12 +1,12 @@
-# ABOUTME: Exercises the vendored config loader: ${VAR:default} substitution, the shipped default
-# ABOUTME: scanners.yml parsing into a Config, and a missing file reported rather than raised.
+# ABOUTME: Exercises the vendored config loader: ${VAR:default} substitution, the image's default
+# ABOUTME: scanners.yml loading only the baked-in classifier, and a missing file reported rather than raised.
 import pytest
 from structlog.testing import capture_logs
 
 from app.config import get_config, load_yaml
 from tests.dockerfile import REPO_ROOT
 
-DEFAULT_CONFIG = REPO_ROOT / "src" / "config" / "scanners.yml"
+SHIPPED_CONFIG = REPO_ROOT / "config" / "scanners.yml"
 
 
 @pytest.fixture
@@ -58,19 +58,41 @@ def test_set_variables_override_the_defaults(config_file, monkeypatch):
     }
 
 
-def test_shipped_default_config_parses(monkeypatch):
+def test_shipped_config_parses(monkeypatch):
     monkeypatch.setenv("AUTH_TOKEN", "token-from-env")
+    monkeypatch.setenv("WIB_PI_MODEL_DIR", "/home/user/models/prompt-injection")
 
-    config = get_config(str(DEFAULT_CONFIG))
+    config = get_config(str(SHIPPED_CONFIG))
 
     assert config.auth.type == "http_bearer"
     assert config.auth.token == "token-from-env"
-    assert config.app.lazy_load is True
     assert config.metrics.exporter == "prometheus"
-    input_types = [s.type for s in config.input_scanners]
-    assert "PromptInjection" in input_types
-    assert len(input_types) == len(set(input_types))
-    assert [s.type for s in config.output_scanners]
+
+
+def test_shipped_config_loads_the_classifier_at_start(monkeypatch):
+    monkeypatch.delenv("LAZY_LOAD", raising=False)
+    monkeypatch.setenv("WIB_PI_MODEL_DIR", "/home/user/models/prompt-injection")
+
+    assert get_config(str(SHIPPED_CONFIG)).app.lazy_load is False
+
+
+def test_shipped_config_scans_only_with_the_baked_in_classifier(monkeypatch):
+    monkeypatch.setenv("WIB_PI_MODEL_DIR", "/models/pi")
+
+    config = get_config(str(SHIPPED_CONFIG))
+
+    assert [(s.type, s.params) for s in config.input_scanners] == [
+        (
+            "PromptInjection",
+            {
+                "threshold": 0.92,
+                "match_type": "truncate_head_tail",
+                "model_max_length": 256,
+                "model_path": "/models/pi",
+            },
+        )
+    ]
+    assert config.output_scanners == []
 
 
 def test_missing_file_is_logged_and_yields_no_config(tmp_path):
