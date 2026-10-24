@@ -7,6 +7,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WORK="$REPO_ROOT/.e2e"
 VENV="$WORK/venv"
 WEIGHTS="$WORK/models/prompt-injection"
+ZS_WEIGHTS="$WORK/models/zero-shot"
 
 for tool in uv unshare; do
   command -v "$tool" >/dev/null || { echo "E2E needs $tool on PATH" >&2; exit 1; }
@@ -32,13 +33,15 @@ if cuda:
     raise SystemExit(f"CUDA packages resolved into a CPU-only install: {cuda}")
 EOF
 
-echo "[3/4] Weights from the model image pinned in Dockerfile"
+echo "[3/4] Weights from the model image pinned in Dockerfile, and the zero-shot files model-zero-shot/ pins"
 "$VENV/bin/python" -I "$REPO_ROOT/tests/e2e/fetch_weights.py" "$WEIGHTS"
+"$VENV/bin/python" -I "$REPO_ROOT/tests/e2e/fetch_zero_shot.py" "$ZS_WEIGHTS"
 
 echo "[4/4] Scanning with no network"
 cd "$REPO_ROOT"
 exec unshare -rn env \
   WIB_PI_MODEL_DIR="$WEIGHTS" \
+  WIB_ZS_MODEL_DIR="$ZS_WEIGHTS" \
   HF_HUB_OFFLINE=1 \
   TRANSFORMERS_OFFLINE=1 \
   HF_DATASETS_OFFLINE=1 \
