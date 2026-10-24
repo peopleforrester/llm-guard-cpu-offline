@@ -152,6 +152,13 @@ ENV WIB_PI_MODEL_DIR=/home/user/models/prompt-injection \
     HF_DATASETS_OFFLINE=1 \
     PYTHONPATH=$HOME/app
 
+# entrypoint.sh starts `uvicorn app.app:create_app` without --factory (#7). uvicorn 0.34.2 then
+# calls create_app() itself, and if that raises TypeError, as a scanner built with a missing
+# parameter does, it swallows the error and serves create_app as an ASGI2 app: the process stays up
+# and every request is a 500 naming the wrong TypeError. uvicorn reads its flags from UVICORN_*
+# variables, so this sets --factory without editing the vendored script, and a bad config exits.
+ENV UVICORN_FACTORY=true
+
 EXPOSE 8000
 
 ENTRYPOINT ["./entrypoint.sh"]

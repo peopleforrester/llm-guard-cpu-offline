@@ -44,3 +44,18 @@ The image now copies `config/scanners.yml`, a packaging-owned file: upstream's `
 because `src/` is a verbatim copy of upstream. `lazy_load` defaults to false, as in the cluster's
 ConfigMap, so a missing model fails the start instead of the first scan. The E2E suite scans with
 this file rather than a config written for the test.
+## 2026-10-24: `--factory` through the environment, not by patching `src/entrypoint.sh` (#7)
+
+`src/entrypoint.sh` starts `uvicorn app.app:create_app` without `--factory`. Under uvicorn 0.34.2 a
+TypeError raised inside `create_app()`, such as a scanner missing a required parameter, is swallowed
+and the factory itself is served, so the pod stays up answering 500 with the wrong error. uvicorn
+reads every flag from a `UVICORN_*` variable (`auto_envvar_prefix="UVICORN"`), so the Dockerfile sets
+`UVICORN_FACTORY=true` and uvicorn exits 1 with `Error loading ASGI app factory: <the real error>`.
+
+This keeps `src/` verbatim, which the README states, and is one line in the file this repository
+owns. Editing the vendored script would have made that claim false; a second, packaging-owned
+entrypoint would have left a dead copy of upstream's beside it.
+
+| Package | Pin | Why |
+|---|---|---|
+| uvicorn | 0.34.2 | Unit suite only: the entrypoint test runs the vendored script, and this is `src/pyproject.toml`'s pin. |
