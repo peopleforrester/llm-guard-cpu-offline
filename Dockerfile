@@ -142,6 +142,12 @@ COPY --chown=user:user src/LICENSE.upstream ./LICENSE.upstream
 # (gitops/ai-layer/resources.yaml) and the file below is shadowed.
 COPY --chown=user:user src/config/scanners.yml ./config/scanners.yml
 COPY --chown=user:user --chmod=755 src/entrypoint.sh ./entrypoint.sh
+# entrypoint.sh starts uvicorn without exec (#9), so bash stays PID 1. The kernel delivers a signal to
+# a PID 1 only if it handles it, bash installs no handler and forwards nothing, so a terminating pod
+# would sit out its grace period until SIGKILL. With exec, uvicorn becomes PID 1 and its own SIGTERM
+# handler shuts it down gracefully. The edit is made here so src/ stays verbatim; the grep fails the
+# build if upstream's line ever stops matching.
+RUN sed -i 's/^uvicorn /exec uvicorn /' ./entrypoint.sh && grep -q '^exec uvicorn ' ./entrypoint.sh
 
 # Nothing reaches the Hub at runtime. The scanner loads from WIB_PI_MODEL_DIR with local_files_only.
 ENV WIB_PI_MODEL_DIR=/home/user/models/prompt-injection \
