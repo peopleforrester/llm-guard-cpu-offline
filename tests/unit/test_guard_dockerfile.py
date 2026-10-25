@@ -1,5 +1,6 @@
 # ABOUTME: Guards the properties the guard image exists for: CPU-only torch, weights from our pinned
 # ABOUTME: mirror, Hugging Face offline at runtime, and no compiler in the stage that ships.
+import json
 import re
 
 import pytest
@@ -76,7 +77,10 @@ def test_runtime_ships_the_upstream_license_and_the_entrypoint():
     copies = DOCKERFILE.final.args_of("COPY")
     assert any("src/LICENSE.upstream" in c for c in copies)
     assert any("src/entrypoint.sh ./entrypoint.sh" in c for c in copies)
-    assert DOCKERFILE.final.args_of("ENTRYPOINT") == ['["./entrypoint.sh"]']
+    (entrypoint,) = DOCKERFILE.final.args_of("ENTRYPOINT")
+    shell, flag, script, name = json.loads(entrypoint)
+    assert (shell, flag, name) == ("/bin/sh", "-c", "entrypoint.sh")
+    assert script.endswith('; exec ./entrypoint.sh "$@"'), script
 
 
 def test_every_copied_source_exists_in_the_repository():
