@@ -59,3 +59,24 @@ entrypoint would have left a dead copy of upstream's beside it.
 | Package | Pin | Why |
 |---|---|---|
 | uvicorn | 0.34.2 | Unit suite only: the entrypoint test runs the vendored script, and this is `src/pyproject.toml`'s pin. |
+## 2026-10-25: question 721, one uvicorn worker per container (#8)
+
+**Question 721:** When the llm-guard image is started with APP_WORKERS above 1, should it refuse to
+start, check the app once before forking workers, or stay as it is with the limitation written down?
+
+**Answer:** Refuse to start above 1.
+
+**Decided by:** hecaton's research under Michael's standing rules, not by Michael.
+
+**What it changes:** The Dockerfile's ENTRYPOINT checks `APP_WORKERS` before it hands over to the
+vendored `entrypoint.sh`. Unset, empty, or `1` runs `./entrypoint.sh` as before. Any other value
+exits 1 with a message saying the image runs one worker per container and scaling is done with
+replicas. Above one worker, uvicorn 0.34.2 runs a supervisor whose `keep_subprocess_alive()`
+respawns every worker that dies. A `create_app()` error therefore repeated about four times a second
+and never exited, and the pod never crash-looped. Each worker would also load its own copy of the
+classifier, which the deployed limits of 1 CPU and 3 GiB do not allow. No deployment set more than
+one worker when this was decided. The check sits in the Dockerfile so `src/` stays verbatim.
+
+| Package | Pin | Why |
+|---|---|---|
+| uvicorn | 0.34.2 | Unit suite only: the worker test runs the vendored script through the image's ENTRYPOINT, and this is `src/pyproject.toml`'s pin. |

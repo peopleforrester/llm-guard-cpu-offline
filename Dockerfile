@@ -161,4 +161,8 @@ ENV UVICORN_FACTORY=true
 
 EXPOSE 8000
 
-ENTRYPOINT ["./entrypoint.sh"]
+# One uvicorn worker per container (#8). Above one, uvicorn 0.34.2 runs a supervisor whose
+# keep_subprocess_alive() respawns every worker that dies, so a create_app() error repeats forever
+# and the pod never crash-loops. Each worker would also load its own copy of the classifier. Scale
+# with replicas instead. The check sits here so the vendored entrypoint.sh stays verbatim.
+ENTRYPOINT ["/bin/sh", "-c", "[ \"${APP_WORKERS:-1}\" = 1 ] || { echo \"APP_WORKERS=$APP_WORKERS: this image runs one uvicorn worker per container; scale with replicas\" >&2; exit 1; }; exec ./entrypoint.sh \"$@\"", "entrypoint.sh"]
