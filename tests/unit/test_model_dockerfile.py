@@ -43,3 +43,9 @@ def test_revision_agrees_everywhere_it_is_recorded():
     for path in [MODEL_DIR / "Dockerfile", MODEL_DIR / "LICENSE.model", REPO_ROOT / "README.md"]:
         assert REVISION in path.read_text(), path
     assert "LICENSE.model" in (REPO_ROOT / "Dockerfile").read_text()
+
+
+def test_result_names_this_repository_as_its_source():
+    assert "org.opencontainers.image.source=https://github.com/peopleforrester/llm-guard-cpu-offline" in (
+        DOCKERFILE.final.args_of("LABEL")
+    )

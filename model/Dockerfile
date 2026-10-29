@@ -38,7 +38,7 @@ FROM ${MODEL_SOURCE} AS source
 
 FROM scratch
 
-LABEL org.opencontainers.image.source=https://github.com/peopleforrester/Unleash_an_Agent_Watch_It_Burn
+LABEL org.opencontainers.image.source=https://github.com/peopleforrester/llm-guard-cpu-offline
 LABEL org.opencontainers.image.description="deberta-v3-base-prompt-injection-v2 ONNX weights, revision 90c9989b1a342275dd0d1a95aad283c04e075671, mirrored"
 LABEL org.opencontainers.image.licenses=Apache-2.0
 LABEL org.opencontainers.image.title="llm-guard prompt-injection classifier weights"

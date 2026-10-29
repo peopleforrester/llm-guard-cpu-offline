@@ -105,7 +105,7 @@ COPY --from=model /LICENSE ${WIB_PI_MODEL_DIR}/LICENSE.model
 # ---------------------------------------------------------------------------------------------------
 FROM python:3.12-slim
 
-LABEL org.opencontainers.image.source=https://github.com/peopleforrester/Unleash_an_Agent_Watch_It_Burn
+LABEL org.opencontainers.image.source=https://github.com/peopleforrester/llm-guard-cpu-offline
 LABEL org.opencontainers.image.description="LLM Guard API v0.3.16, CPU-only torch, prompt-injection classifier baked in for offline scanning"
 LABEL org.opencontainers.image.licenses=MIT
 

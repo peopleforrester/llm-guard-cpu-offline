@@ -50,6 +50,8 @@ own image and pinned by digest in the main Dockerfile.
 Dockerfile      the guard image: multi-stage, CPU torch, vendored API server
 src/            llm_guard_api v0.3.16, verbatim, MIT (LICENSE.upstream)
 model/          the classifier weights as a scratch image, with provenance
+config/         the image's default scanners.yml: PromptInjection only, from the baked-in model
+tests/          unit tests (Dockerfiles, config, entrypoint) and the no-network E2E
 ```
 
 ## The model
@@ -74,6 +76,12 @@ as "no signatures found" even though `cosign verify` passes. The signing procedu
 live in the repository that deploys this image,
 [Unleash_an_Agent_Watch_It_Burn](https://github.com/peopleforrester/Unleash_an_Agent_Watch_It_Burn),
 under `policies/cosign/`.
+
+## Who calls it
+
+[guard-proxy-agenticburn](https://github.com/peopleforrester/guard-proxy-agenticburn) is the
+consumer of this image. It reaches the API at `LLM_GUARD_URL` and fails closed by default
+(`PROXY_FAIL_CLOSED`), so when this image cannot scan, every prompt is refused.
 
 ## History
 

@@ -97,3 +97,9 @@ def test_every_copied_source_exists_in_the_repository():
             sources = [part for part in copy.split() if not part.startswith("--")][:-1]
             for source in sources:
                 assert (REPO_ROOT / source).exists(), source
+
+
+def test_runtime_names_this_repository_as_its_source():
+    assert "org.opencontainers.image.source=https://github.com/peopleforrester/llm-guard-cpu-offline" in (
+        DOCKERFILE.final.args_of("LABEL")
+    )

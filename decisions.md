@@ -101,3 +101,25 @@ mid-shutdown.
 | Package | Pin | Why |
 |---|---|---|
 | uvicorn | 0.34.2 | Unit suite only: the entrypoint test runs the image's script, and this is `src/pyproject.toml`'s pin. |
+
+## 2026-10-29: correction to "the E2E builds the image"
+
+The 2026-10-24 entry "the E2E builds the image" ends with three lines left over from an earlier draft
+("digest, and scans inside `unshare -rn`. It does not build the image: ..."). They are superseded and
+wrong: `tests/e2e/run.sh` does build the image (step 5/6) and scans through it under
+`--network none` (step 6/6). On 2026-10-29 the full run passed on a host with a working Docker: 14
+venv scans, the build, and 11 image scans. Prior entries stay as written, per the append-only rule.
+
+## 2026-10-29: image source labels name this repository
+
+Both Dockerfiles set `org.opencontainers.image.source` to Unleash_an_Agent_Watch_It_Burn, where the
+packaging lived before it got its own repository. They now name
+`peopleforrester/llm-guard-cpu-offline`, so the label leads to the Dockerfile that built the image.
+
+## 2026-10-29: main promoted by hand to 0750303
+
+`ship.sh promote` counted GitHub's Dependabot and Dependency Graph runs as CI, so with no workflow
+in this repository it waited for a run on the staging tip that never comes (filed as
+peopleforrester/llm-coding-workflow#436). Promoted by hand with the same checks: `origin/main` was
+an ancestor of the tip, the tip was `origin/staging` exactly, the five commits were the ones audited,
+and the full E2E passed on that commit. `git push origin 0750303:main`, a fast-forward.
