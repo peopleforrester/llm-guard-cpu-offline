@@ -197,3 +197,14 @@ with one BanTopics scanner appended, `model_path: ${WIB_ZS_MODEL_DIR}`, so the i
 telemetry tests run with both scanners loaded. The shipped config gains BanTopics only once the guard
 image carries the weights, because with `lazy_load: false` a missing model stops the start. No new
 dependency.
+
+## 2026-10-29: llm-guard-0.3.16-cpu.4 published
+
+Built from `46083a4` with `--pull --no-cache`, pushed as
+`ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.4@sha256:3322db6af60c2fc935f2208d0c4a84198b29e93307ab2e88debdd045a919ae9f`
+and signed with cosign 2.6.5; `cosign verify --key` with the workshop key passes. It carries the #7,
+#8 and #9 fixes, PromptInjection only, and predates the #13 OpenTelemetry overrides. Measured: 1,274
+MB compressed, trivy 0 critical and 27 unique critical-and-high. A first build from cached layers had
+one critical, an older certifi and pip CA bundle (GHSA-6q48-6c7w-9gw2), which a no-cache build
+cleared, so the build instructions now pass `--pull --no-cache`. The workshop itself runs
+lab-platform's `llm-guard:v1` since Unleash_an_Agent_Watch_It_Burn#652; cpu.4 was published anyway.

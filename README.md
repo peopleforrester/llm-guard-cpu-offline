@@ -4,10 +4,10 @@
 access** and **no GPU**, at under a third of the upstream image's size.
 
 ```
-ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.3
+ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.4@sha256:3322db6af60c2fc935f2208d0c4a84198b29e93307ab2e88debdd045a919ae9f
 ```
 
-It is publicly pullable, signed with cosign, and pinned by digest wherever it is deployed.
+It is publicly pullable and signed with cosign. Pin it by digest.
 
 ## What this is, and what it is not
 
@@ -36,19 +36,23 @@ it selects the optimum variant only. The fix is installing torch from PyTorch's 
 **It does not depend on Hugging Face to build.** The weights come from `model/`, published as their
 own image and pinned by digest in the main Dockerfile.
 
-| | Upstream-based build | This image |
+| | Upstream-based build | This image (cpu.4) |
 |---|---|---|
-| Compressed size | 4,211 MB | **1,280 MB** |
+| Compressed size | 4,211 MB | **1,274 MB** |
 | Critical CVEs (trivy) | 29 | **0** |
-| Unique CVEs, critical and high | 916 | **24** |
+| Unique CVEs, critical and high | 916 | **27** |
 | Network needed to scan | yes, on the first scan | **no** |
 | Compiler in the runtime image | yes | **no** (multi-stage build) |
+
+The cpu.4 figures were measured on 2026-10-29 with trivy, critical and high only, on a build with no
+layer cache. A cached build carried an older certifi and pip whose CA bundle trivy rates critical.
 
 ## Layout
 
 ```
 Dockerfile      the guard image: multi-stage, CPU torch, vendored API server
 src/            llm_guard_api v0.3.16, verbatim, MIT (LICENSE.upstream)
+overrides.txt   packaging-owned overrides of upstream's pins (OpenTelemetry, #13); src/ stays verbatim
 model/          the classifier weights as a scratch image, with provenance
 config/         the image's default scanners.yml: PromptInjection only, from the baked-in model
 tests/          unit tests (Dockerfiles, config, entrypoint) and the no-network E2E
@@ -66,7 +70,7 @@ license, and it travels inside both images.
 
 ```bash
 docker build -t <registry>/llm-guard-model:<rev> model
-docker build -t <registry>/llm-guard:<tag> .
+docker build --pull --no-cache -t <registry>/llm-guard:<tag> .
 ```
 
 ## Signing

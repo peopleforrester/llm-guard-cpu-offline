@@ -45,8 +45,8 @@
 # applied to the model weights, which are now mirrored too.
 #
 # Build and push (from this repo's root):
-#   docker build -t ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.3 .
-#   docker push ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.3
+#   docker build --pull --no-cache -t ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.4 .
+#   docker push ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.4
 
 # ---------------------------------------------------------------------------------------------------
 # The classifier weights, from our own mirror. A scratch image holding files and nothing executable.
