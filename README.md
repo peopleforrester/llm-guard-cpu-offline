@@ -49,6 +49,7 @@ own image and pinned by digest in the main Dockerfile.
 ```
 Dockerfile      the guard image: multi-stage, CPU torch, vendored API server
 src/            llm_guard_api v0.3.16, verbatim, MIT (LICENSE.upstream)
+overrides.txt   packaging-owned overrides of upstream's pins (OpenTelemetry, #13); src/ stays verbatim
 model/          the classifier weights as a scratch image, with provenance
 config/         the image's default scanners.yml: PromptInjection only, from the baked-in model
 tests/          unit tests (Dockerfiles, config, entrypoint) and the no-network E2E
