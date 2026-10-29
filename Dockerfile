@@ -45,15 +45,20 @@
 # applied to the model weights, which are now mirrored too.
 #
 # Build and push (from this repo's root):
-#   docker build --pull --no-cache -t ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.4 .
-#   docker push ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.4
+#   docker build --pull --no-cache -t ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.5 .
+#   docker push ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.5
 
 # ---------------------------------------------------------------------------------------------------
 # The classifier weights, from our own mirror. A scratch image holding files and nothing executable.
 # Re-pin with `docker buildx imagetools inspect <ref>` when the model revision changes.
 # ---------------------------------------------------------------------------------------------------
 ARG MODEL_IMAGE=ghcr.io/peopleforrester/watch-it-burn:llm-guard-model-90c9989b@sha256:a8a678af4326562aaa265b718dc9aaa172e9940f40545eca174b0737a63ec8e4
+# The BanTopics zero-shot weights (#2, #15): deberta-v3-base-zeroshot-v2.0 at revision 8e7e5af5, MIT,
+# published from model-zero-shot/ and pinned by digest the same way. Declared here because an ARG a
+# FROM names must come before the first FROM.
+ARG ZERO_SHOT_IMAGE=ghcr.io/peopleforrester/watch-it-burn:llm-guard-model-zeroshot-8e7e5af5@sha256:c01ca9644bb1c93601a1b333339a3a2aacd63a287e057a4a124f5f08b33c7ca8
 FROM ${MODEL_IMAGE} AS model
+FROM ${ZERO_SHOT_IMAGE} AS zero-shot
 
 # ---------------------------------------------------------------------------------------------------
 # Builder: compilers and the full install. None of this stage ships.
@@ -107,6 +112,10 @@ RUN python -m spacy download en_core_web_sm
 ENV WIB_PI_MODEL_DIR=/home/user/models/prompt-injection
 COPY --from=model --chown=user:user /model ${WIB_PI_MODEL_DIR}
 COPY --from=model /LICENSE ${WIB_PI_MODEL_DIR}/LICENSE.model
+# BanTopics loads from here through model_path, with model.onnx and the tokenizer at the top level.
+ENV WIB_ZS_MODEL_DIR=/home/user/models/zero-shot
+COPY --from=zero-shot --chown=user:user /model ${WIB_ZS_MODEL_DIR}
+COPY --from=zero-shot /LICENSE ${WIB_ZS_MODEL_DIR}/LICENSE.model
 
 # ---------------------------------------------------------------------------------------------------
 # Runtime: no compiler, no headers, no pip cache. Only what serves a request.
@@ -114,7 +123,7 @@ COPY --from=model /LICENSE ${WIB_PI_MODEL_DIR}/LICENSE.model
 FROM python:3.12-slim
 
 LABEL org.opencontainers.image.source=https://github.com/peopleforrester/llm-guard-cpu-offline
-LABEL org.opencontainers.image.description="LLM Guard API v0.3.16, CPU-only torch, prompt-injection classifier baked in for offline scanning"
+LABEL org.opencontainers.image.description="LLM Guard API v0.3.16, CPU-only torch, prompt-injection and zero-shot topic classifiers baked in for offline scanning"
 LABEL org.opencontainers.image.licenses=MIT
 
 # libgomp1 is the one runtime library the compiler used to bring along. onnxruntime and torch want
@@ -149,7 +158,7 @@ COPY --chown=user:user src/LICENSE.upstream ./LICENSE.upstream
 # A default config so the image runs standalone. In the cluster this path is a ConfigMap mount
 # (gitops/ai-layer/resources.yaml) and the file below is shadowed. It is ours, not upstream's
 # src/config/scanners.yml: that one enables scanners whose models come from huggingface.co on the
-# first scan, while this one runs PromptInjection alone, from WIB_PI_MODEL_DIR.
+# first scan, while this one runs PromptInjection and BanTopics, from WIB_PI_MODEL_DIR and WIB_ZS_MODEL_DIR.
 COPY --chown=user:user config/scanners.yml ./config/scanners.yml
 COPY --chown=user:user --chmod=755 src/entrypoint.sh ./entrypoint.sh
 # entrypoint.sh starts uvicorn without exec (#9), so bash stays PID 1. The kernel delivers a signal to
@@ -159,8 +168,9 @@ COPY --chown=user:user --chmod=755 src/entrypoint.sh ./entrypoint.sh
 # build if upstream's line ever stops matching.
 RUN sed -i 's/^uvicorn /exec uvicorn /' ./entrypoint.sh && grep -q '^exec uvicorn ' ./entrypoint.sh
 
-# Nothing reaches the Hub at runtime. The scanner loads from WIB_PI_MODEL_DIR with local_files_only.
+# Nothing reaches the Hub at runtime. Both scanners load from their directories with local_files_only.
 ENV WIB_PI_MODEL_DIR=/home/user/models/prompt-injection \
+    WIB_ZS_MODEL_DIR=/home/user/models/zero-shot \
     HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1 \
     HF_DATASETS_OFFLINE=1 \

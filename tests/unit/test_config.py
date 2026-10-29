@@ -61,6 +61,7 @@ def test_set_variables_override_the_defaults(config_file, monkeypatch):
 def test_shipped_config_parses(monkeypatch):
     monkeypatch.setenv("AUTH_TOKEN", "token-from-env")
     monkeypatch.setenv("WIB_PI_MODEL_DIR", "/home/user/models/prompt-injection")
+    monkeypatch.setenv("WIB_ZS_MODEL_DIR", "/home/user/models/zero-shot")
 
     config = get_config(str(SHIPPED_CONFIG))
 
@@ -72,12 +73,14 @@ def test_shipped_config_parses(monkeypatch):
 def test_shipped_config_loads_the_classifier_at_start(monkeypatch):
     monkeypatch.delenv("LAZY_LOAD", raising=False)
     monkeypatch.setenv("WIB_PI_MODEL_DIR", "/home/user/models/prompt-injection")
+    monkeypatch.setenv("WIB_ZS_MODEL_DIR", "/home/user/models/zero-shot")
 
     assert get_config(str(SHIPPED_CONFIG)).app.lazy_load is False
 
 
-def test_shipped_config_scans_only_with_the_baked_in_classifier(monkeypatch):
+def test_shipped_config_scans_only_with_the_baked_in_classifiers(monkeypatch):
     monkeypatch.setenv("WIB_PI_MODEL_DIR", "/models/pi")
+    monkeypatch.setenv("WIB_ZS_MODEL_DIR", "/models/zs")
 
     config = get_config(str(SHIPPED_CONFIG))
 
@@ -90,7 +93,16 @@ def test_shipped_config_scans_only_with_the_baked_in_classifier(monkeypatch):
                 "model_max_length": 256,
                 "model_path": "/models/pi",
             },
-        )
+        ),
+        (
+            "BanTopics",
+            {
+                "topics": ["violence"],
+                "threshold": 0.8,
+                "model_max_length": 256,
+                "model_path": "/models/zs",
+            },
+        ),
     ]
     assert config.output_scanners == []
 

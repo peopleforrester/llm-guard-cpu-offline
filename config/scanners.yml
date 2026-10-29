@@ -1,11 +1,11 @@
 # ABOUTME: The image's default config: upstream's app, auth and telemetry settings, with only the
-# ABOUTME: PromptInjection scanner, loaded from the baked-in classifier so the image scans with no network.
+# ABOUTME: PromptInjection and BanTopics scanners, loaded from the baked-in classifiers so the image scans with no network.
 #
 # This file replaces src/config/scanners.yml in the image, which stays as upstream wrote it. Upstream's
-# default enables about thirty scanners, and every scanner other than PromptInjection fetches its
-# model from huggingface.co on first use, so with no network the first scan failed. PromptInjection is
-# the one model this image carries: model_path loads it from WIB_PI_MODEL_DIR with local_files_only.
-# lazy_load is off so the classifier loads at start and a missing model fails the start, not a scan.
+# default enables about thirty scanners, and most fetch their model from huggingface.co on first use,
+# so with no network the first scan failed. The image carries two models: PromptInjection loads from
+# WIB_PI_MODEL_DIR and BanTopics from WIB_ZS_MODEL_DIR, each through model_path with local_files_only.
+# lazy_load is off so the classifiers load at start and a missing model fails the start, not a scan.
 app:
   name: ${APP_NAME:LLM Guard API}
   log_level: ${LOG_LEVEL:INFO}
@@ -38,5 +38,11 @@ input_scanners:
       match_type: truncate_head_tail
       model_max_length: 256
       model_path: ${WIB_PI_MODEL_DIR}
+  - type: BanTopics
+    params:
+      topics: ["violence"]
+      threshold: 0.8
+      model_max_length: 256
+      model_path: ${WIB_ZS_MODEL_DIR}
 
 output_scanners: []

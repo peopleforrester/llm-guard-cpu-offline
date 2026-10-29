@@ -208,3 +208,21 @@ MB compressed, trivy 0 critical and 27 unique critical-and-high. A first build f
 one critical, an older certifi and pip CA bundle (GHSA-6q48-6c7w-9gw2), which a no-cache build
 cleared, so the build instructions now pass `--pull --no-cache`. The workshop itself runs
 lab-platform's `llm-guard:v1` since Unleash_an_Agent_Watch_It_Burn#652; cpu.4 was published anyway.
+
+## 2026-10-29: BanTopics wired into the guard image (#15, #16)
+
+`ghcr.io/peopleforrester/watch-it-burn:llm-guard-model-zeroshot-8e7e5af5` was built from
+`model-zero-shot/` and pushed, digest
+`sha256:c01ca9644bb1c93601a1b333339a3a2aacd63a287e057a4a124f5f08b33c7ca8`. The guard Dockerfile pins
+it as `ZERO_SHOT_IMAGE`, a global ARG because a FROM can only name an ARG declared before the first
+FROM, and copies `/model` and its license to `/home/user/models/zero-shot` (`WIB_ZS_MODEL_DIR`). The
+shipped `config/scanners.yml` runs BanTopics (`topics: ["violence"]`, threshold 0.8, upstream's
+example values) after PromptInjection, so the offline E2E no longer appends it. The image suite now
+starts the container on the shipped config and checks, per #16, that BanTopics blocks inside the
+image, that the baked files match `model-zero-shot/`'s checksums, readiness within 120 s and
+`/home/user` under 3,600 MiB.
+
+Measured on the E2E build, 2026-10-29: ready in 15.7 to 16.0 s over three starts with both
+classifiers, on a 16-core host at load average 24 to 31; `/home/user` 3,110 MiB (venv 1,671,
+prompt-injection 724, zero-shot 715). The tag is `llm-guard-0.3.16-cpu.5` per question 907 on #15,
+since cpu.4 was already published PromptInjection-only.

@@ -11,15 +11,23 @@ DOCKERFILE = parse(REPO_ROOT / "Dockerfile")
 DIGEST = re.compile(r"@sha256:[0-9a-f]{64}$")
 
 
-def test_stages_are_model_builder_then_runtime():
-    assert [s.name for s in DOCKERFILE.stages] == ["model", "builder", None]
+def test_stages_are_models_builder_then_runtime():
+    assert [s.name for s in DOCKERFILE.stages] == ["model", "zero-shot", "builder", None]
     assert DOCKERFILE.stage("model").base == "${MODEL_IMAGE}"
+    assert DOCKERFILE.stage("zero-shot").base == "${ZERO_SHOT_IMAGE}"
     assert DOCKERFILE.stage("builder").base == "python:3.12-slim"
     assert DOCKERFILE.final.base == "python:3.12-slim"
 
 
 def test_model_image_is_pinned_by_digest():
     assert DIGEST.search(DOCKERFILE.args["MODEL_IMAGE"]), DOCKERFILE.args["MODEL_IMAGE"]
+
+
+def test_zero_shot_image_is_pinned_by_digest():
+    assert DIGEST.search(DOCKERFILE.args["ZERO_SHOT_IMAGE"]), DOCKERFILE.args["ZERO_SHOT_IMAGE"]
+    assert DOCKERFILE.args["ZERO_SHOT_IMAGE"].startswith(
+        "ghcr.io/peopleforrester/watch-it-burn:llm-guard-model-zeroshot-8e7e5af5@"
+    )
 
 
 def test_torch_comes_pinned_from_the_cpu_index_before_the_package_install():
@@ -41,6 +49,12 @@ def test_builder_takes_the_weights_from_the_model_stage():
     assert any(c.startswith("--from=model") and "/LICENSE" in c for c in copies)
 
 
+def test_builder_takes_the_zero_shot_weights_and_their_license_from_their_stage():
+    copies = DOCKERFILE.stage("builder").args_of("COPY")
+    assert "--from=zero-shot --chown=user:user /model ${WIB_ZS_MODEL_DIR}" in copies, copies
+    assert "--from=zero-shot /LICENSE ${WIB_ZS_MODEL_DIR}/LICENSE.model" in copies, copies
+
+
 def test_nothing_in_the_build_downloads_from_hugging_face():
     for stage in DOCKERFILE.stages:
         for _, args in stage.instructions:
@@ -60,6 +74,11 @@ def test_runtime_points_the_scanner_at_the_baked_in_model():
         c.startswith("--from=builder") and c.endswith("/home/user/models /home/user/models")
         for c in copies
     ), copies
+
+
+def test_runtime_points_ban_topics_at_the_baked_in_zero_shot_model():
+    assert DOCKERFILE.stage("builder").env()["WIB_ZS_MODEL_DIR"] == "/home/user/models/zero-shot"
+    assert DOCKERFILE.final.env()["WIB_ZS_MODEL_DIR"] == "/home/user/models/zero-shot"
 
 
 def test_runtime_has_no_compiler():
