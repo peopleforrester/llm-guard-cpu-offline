@@ -1,0 +1,18 @@
+# ABOUTME: Packaging-owned overrides of pins in the vendored src/pyproject.toml, which stays as upstream
+# ABOUTME: wrote it. The Dockerfile and tests/e2e/run.sh apply them with `uv pip install --override`.
+#
+# An override replaces every requirement on that package, upstream's own and those of its dependencies,
+# so a pin upstream wrote with == can move. A pip constraint cannot do that: it only narrows, and
+# against an exact pin it fails the resolve. The installed llm-guard-api metadata still states
+# upstream's pins, so `pip check` reports these packages; that is expected.
+#
+# OpenTelemetry (#13): opentelemetry-api 1.33.1 parses the W3C tracestate header in quadratic time with
+# no length bound (Dependabot alert #1), and FastAPIInstrumentor extracts it from every request.
+# 1.45.1 is the first release with the fix. The 1.x packages and the 0.x b-releases are cut together
+# and pin one another exactly, so the whole set moves at once. opentelemetry-sdk-extension-aws 2.1.0
+# and opentelemetry-propagator-aws-xray 1.0.2 accept any 1.x and stay at upstream's pins.
+opentelemetry-api==1.45.1
+opentelemetry-sdk==1.45.1
+opentelemetry-exporter-otlp-proto-http==1.45.1
+opentelemetry-instrumentation-fastapi==0.66b1
+opentelemetry-exporter-prometheus==0.66b1

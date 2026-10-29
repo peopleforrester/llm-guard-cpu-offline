@@ -27,9 +27,9 @@ TORCH_PIN="$(grep -o 'torch==[0-9][0-9.]*' "$REPO_ROOT/Dockerfile")"
 echo "[1/6] Python 3.12 environment in $VENV"
 [ -x "$VENV/bin/python" ] || uv venv --quiet --python 3.12 "$VENV"
 
-echo "[2/6] $TORCH_PIN from the PyTorch CPU index, then src[cpu], as the Dockerfile installs them"
+echo "[2/6] $TORCH_PIN from the PyTorch CPU index, then src[cpu] with overrides.txt, as the Dockerfile installs them"
 uv pip install --python "$VENV/bin/python" "$TORCH_PIN" --index-url https://download.pytorch.org/whl/cpu
-uv pip install --python "$VENV/bin/python" "$REPO_ROOT/src[cpu]" -r "$REPO_ROOT/tests/e2e/requirements.txt"
+uv pip install --python "$VENV/bin/python" --override "$REPO_ROOT/overrides.txt" "$REPO_ROOT/src[cpu]" -r "$REPO_ROOT/tests/e2e/requirements.txt"
 "$VENV/bin/python" - <<'EOF'
 import importlib.metadata as md
 cuda = sorted(d.metadata["Name"] for d in md.distributions() if d.metadata["Name"].startswith("nvidia-"))

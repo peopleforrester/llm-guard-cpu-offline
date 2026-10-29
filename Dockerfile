@@ -64,6 +64,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# uv applies overrides.txt below, which pip cannot. Installed as root into the system Python, outside
+# the venv, so it stays in this stage.
+RUN pip install --no-cache-dir --root-user-action=ignore uv==0.13.6
+
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
@@ -79,6 +83,7 @@ RUN python -m venv "$VIRTUAL_ENV"
 WORKDIR $HOME/app
 COPY --chown=user:user src/pyproject.toml ./
 COPY --chown=user:user src/app ./app
+COPY --chown=user:user overrides.txt ./
 
 # torch FIRST, from PyTorch's CPU index. This is the size fix: it satisfies llm-guard's `torch>=2.4.0`
 # with a 159 MB wheel instead of a 555 MB one and keeps the fifteen NVIDIA packages and triton out of
@@ -86,7 +91,10 @@ COPY --chown=user:user src/app ./app
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch==2.14.0 --index-url https://download.pytorch.org/whl/cpu
 
-RUN pip install --no-cache-dir ".[cpu]"
+# Upstream's pins, except where overrides.txt replaces them (#13): the OpenTelemetry set moves past the
+# tracestate parsing fix in opentelemetry-api 1.45.1 while src/pyproject.toml stays as upstream wrote it.
+# The torch above already satisfies `torch>=2.4.0`, so this resolve leaves it in place.
+RUN uv pip install --no-cache --override overrides.txt ".[cpu]"
 
 RUN python -m spacy download en_core_web_sm
 

@@ -139,3 +139,45 @@ Dependabot's PR bumped only `opentelemetry-api` to 1.45.1 in `src/pyproject.toml
 resolve: `opentelemetry-sdk==1.33.1` pins the api exactly. It also edited the vendored `src/`. The
 advisory (alert #1, unbounded tracestate parsing, medium) is tracked in #13 as one coherent
 OpenTelemetry upgrade.
+
+## 2026-10-29: OpenTelemetry upgraded through packaging-owned overrides, `src/` stays verbatim (#13)
+
+Dependabot alert #1 (medium): opentelemetry-api 1.33.1 parses the W3C `tracestate` header in quadratic
+time with no length bound, and `FastAPIInstrumentor` extracts it from every request, so any caller
+can send one. 1.45.1 fixes it and discards a `tracestate` longer than 8192 characters.
+
+**Decided:** the upgrade lands in `overrides.txt`, a packaging-owned file that the Dockerfile and
+`tests/e2e/run.sh` apply with `uv pip install --override`. `src/pyproject.toml` stays as upstream
+wrote it, and the README's verbatim claim stays true. This follows #7, #8 and #9, which each kept
+`src/` verbatim and made the change in a file this repository owns.
+
+Why overrides and not a constraint: a pip constraint only narrows. Against upstream's
+`opentelemetry-sdk==1.33.1`, which pins the api exactly, a constraint of `>=1.45.1` fails the
+resolve, which is what sank PR #10. An override replaces every requirement on the package, upstream's
+and those of its dependencies. pip has no override option, so the builder stage installs uv as root
+into the system Python. The venv that ships never contains it.
+
+The set moves as one release, because the 1.x packages and the 0.x b-releases pin one another
+exactly: opentelemetry-api, -sdk and -exporter-otlp-proto-http to 1.45.1, and
+-instrumentation-fastapi and -exporter-prometheus to 0.66b1. opentelemetry-sdk-extension-aws 2.1.0
+and opentelemetry-propagator-aws-xray 1.0.2 accept any 1.x (`~=1.12`), so they stay at upstream's pins.
+
+Rejected: editing `src/pyproject.toml` and narrowing the README's verbatim claim. That would close
+the alert on its own and keep the installed metadata consistent, but it edits the vendored copy, and
+the README change is public prose.
+
+Costs, accepted: the dependency graph still reads `src/pyproject.toml`, so alert #1 does not close
+when this merges. It has to be dismissed as inaccurate, citing this entry, and any later alert on
+an overridden pin needs the same handling. The installed `llm-guard-api` metadata still states
+upstream's pins, so `pip check` in the image reports the five packages.
+
+Tests: the unit suite checks the overrides (exact pins, the whole release, api at least 1.45.1) and
+that both installs apply them. The venv E2E checks that a request continues the caller's trace,
+that an oversized `tracestate` is discarded with the library's warning, and that `/metrics` counts
+requests. The image E2E checks the installed api version and `/metrics` through the built image.
+
+| Package | Pin | Why |
+|---|---|---|
+| uv | 0.13.6 (2026-10-27) | Builder stage only: applies `overrides.txt`, which pip cannot. Current release. |
+| opentelemetry-api, -sdk, -exporter-otlp-proto-http | 1.45.1 (2026-10-06) | First release with the tracestate fix; current. |
+| opentelemetry-instrumentation-fastapi, -exporter-prometheus | 0.66b1 (2026-10-06) | Cut with 1.45.1, and they pin it. |

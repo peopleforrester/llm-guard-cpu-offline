@@ -3,6 +3,7 @@
 import json
 
 import pytest
+from packaging.version import Version
 
 from tests.image.runtime import TOKEN, docker
 
@@ -74,3 +75,22 @@ def test_wrong_token_is_rejected(api):
 
 def test_missing_token_is_rejected(api):
     assert api("POST", "/analyze/prompt", "", {"prompt": BENIGN})["status"] == 403
+
+
+def test_opentelemetry_api_has_the_tracestate_fix(container):
+    version = docker("exec", container, "python", "-c", "import importlib.metadata as m; print(m.version('opentelemetry-api'))")
+    assert Version(version.stdout.strip()) >= Version("1.45.1")
+
+
+def test_prometheus_metrics_count_requests(api):
+    assert api("POST", "/analyze/prompt", TOKEN, {"prompt": BENIGN})["status"] == 200
+
+    reply = api("GET", "/metrics")
+
+    assert reply["status"] == 200
+    request_counts = [
+        line
+        for line in reply["body"].splitlines()
+        if line.startswith("http_server_duration_milliseconds_count{") and 'http_target="/analyze/prompt"' in line
+    ]
+    assert request_counts, reply["body"]

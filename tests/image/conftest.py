@@ -55,6 +55,8 @@ def container(model_dir, tmp_path_factory):
         "auth:\n"
         "  type: http_bearer\n"
         f"  token: {TOKEN}\n"
+        "metrics:\n"
+        "  exporter: prometheus\n"
         "input_scanners:\n"
         "  - type: PromptInjection\n"
         "    params:\n"
