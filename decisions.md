@@ -123,3 +123,19 @@ in this repository it waited for a run on the staging tip that never comes (file
 peopleforrester/llm-coding-workflow#436). Promoted by hand with the same checks: `origin/main` was
 an ancestor of the tip, the tip was `origin/staging` exactly, the five commits were the ones audited,
 and the full E2E passed on that commit. `git push origin 0750303:main`, a fast-forward.
+
+## 2026-10-29: CI on GitHub-hosted runners (#5)
+
+`.github/workflows/test.yml` runs the unit suite and `tests/e2e/run.sh` on `ubuntu-24.04`, on push to
+staging and main and on pull requests. Hosted rather than the fleet's `[self-hosted, general]`: the
+repository is public, so fork pull requests must not reach a self-hosted runner, and the fleet runner
+could not reach the docker daemon (#11). Public repositories run hosted minutes at no cost. The E2E
+job lifts Ubuntu 24.04's AppArmor block on unprivileged user namespaces, which `unshare -rn` needs,
+and removes the runner's preinstalled Android SDK, .NET and GHC for disk.
+
+## 2026-10-29: PR #10 closed, alert tracked in #13
+
+Dependabot's PR bumped only `opentelemetry-api` to 1.45.1 in `src/pyproject.toml`, which does not
+resolve: `opentelemetry-sdk==1.33.1` pins the api exactly. It also edited the vendored `src/`. The
+advisory (alert #1, unbounded tracestate parsing, medium) is tracked in #13 as one coherent
+OpenTelemetry upgrade.

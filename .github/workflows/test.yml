@@ -1,0 +1,37 @@
+# ABOUTME: CI for the packaging: the unit suite on every push, and the full E2E, which builds the
+# ABOUTME: guard image and scans through it under --network none, on a hosted runner that has docker.
+name: test
+on:
+  push:
+    branches: [staging, main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+# GitHub-hosted on purpose (#5): the repository is public, so pull requests from forks must not reach a
+# self-hosted runner, and the E2E needs a docker daemon the fleet runner does not grant.
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, as of 2026-10-29
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0, as of 2026-10-29
+      # The command AGENTS.md declares.
+      - run: uv run --no-project --python 3.12 --with-requirements tests/requirements-unit.txt -- sh -c 'ruff check tests && pytest'
+
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, as of 2026-10-29
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0, as of 2026-10-29
+      # Ubuntu 24.04's AppArmor denies unprivileged user namespaces by default, and run.sh scans the
+      # venv install inside `unshare -rn`.
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      # The E2E holds a CPU torch venv and the guard image's build stages at once; the runner's
+      # preinstalled Android SDK, .NET and GHC are the space it needs.
+      - run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc && df -h /
+      - run: tests/e2e/run.sh
