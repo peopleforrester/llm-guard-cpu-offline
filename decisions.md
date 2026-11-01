@@ -226,3 +226,12 @@ Measured on the E2E build, 2026-10-29: ready in 15.7 to 16.0 s over three starts
 classifiers, on a 16-core host at load average 24 to 31; `/home/user` 3,110 MiB (venv 1,671,
 prompt-injection 724, zero-shot 715). The tag is `llm-guard-0.3.16-cpu.5` per question 907 on #15,
 since cpu.4 was already published PromptInjection-only.
+
+## 2026-11-01: llm-guard-0.3.16-cpu.5 signed and published
+
+`ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.5@sha256:4c66fd0f0846c2c829952e562fd076f37ca8f7e41fb6ecfbb5a1f28cb8579791`,
+built from `31962f2` with `--pull --no-cache`, was signed with cosign 2.6.5 (tlog index 3635423963).
+`cosign verify --key` with the workshop key passes, including the transparency log check. Measured
+2026-10-29 on that build: 1,650 MB compressed, trivy 0 critical and 27 unique critical-and-high, ready
+in 16 to 19 s on the shipped config. The README now names cpu.5 as the current image and keeps cpu.4
+as the last PromptInjection-only build.
