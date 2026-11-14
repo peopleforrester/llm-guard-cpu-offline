@@ -1,0 +1,13 @@
+# images.lock: every container image this repo depends on, pinned by digest.
+# Columns: ref  digest  source  saved   (whitespace-separated, one image per line)
+# source: repo:<owner/name[/path]>  build context in a repo we own
+#         build:<path>              built from <path> in this repo; digest may be -
+#         upstream:<url>            third-party image built from someone else's source
+#         none                      handed to us built: the saved tarball is the only copy
+#         not-an-image:<why>        a placeholder or deliberate bad example; digest -
+# Written by scripts/mirror-images.sh in llm-coding-workflow; the rule is
+# claude-config/rules/infra/image-retention.md there.
+python:3.12-slim sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b upstream:https://github.com/docker-library/official-images 2026-11-13
+${MODEL_IMAGE} ghcr.io/peopleforrester/watch-it-burn:llm-guard-model-90c9989b@sha256:a8a678af4326562aaa265b718dc9aaa172e9940f40545eca174b0737a63ec8e4 repo:peopleforrester/llm-guard-cpu-offline/model -
+${ZERO_SHOT_IMAGE} ghcr.io/peopleforrester/watch-it-burn:llm-guard-model-zeroshot-8e7e5af5@sha256:c01ca9644bb1c93601a1b333339a3a2aacd63a287e057a4a124f5f08b33c7ca8 repo:peopleforrester/llm-guard-cpu-offline/model-zero-shot -
+${MODEL_SOURCE} ghcr.io/peopleforrester/watch-it-burn:llm-guard-0.3.16-cpu.2@sha256:9fe5d2ae3a83ecf2d2242f1a20bc3008ce7c8d19ddbe62516db06905ac9fe135 repo:peopleforrester/llm-guard-cpu-offline -
