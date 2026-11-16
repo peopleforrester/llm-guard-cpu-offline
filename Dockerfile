@@ -96,8 +96,9 @@ COPY --chown=user:user overrides.txt ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch==2.14.0 --index-url https://download.pytorch.org/whl/cpu
 
-# Upstream's pins, except where overrides.txt replaces them (#13): the OpenTelemetry set moves past the
-# tracestate parsing fix in opentelemetry-api 1.45.1 while src/pyproject.toml stays as upstream wrote it.
+# Upstream's pins, except where overrides.txt replaces them (#13, #19): the OpenTelemetry set moves past
+# the tracestate and traceparent parsing fixes in opentelemetry-api 1.45.2 while src/pyproject.toml
+# stays as upstream wrote it.
 # The torch above already satisfies `torch>=2.4.0`, so this resolve leaves it in place.
 RUN uv pip install --no-cache --override overrides.txt ".[cpu]"
 

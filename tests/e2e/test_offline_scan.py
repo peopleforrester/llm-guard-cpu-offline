@@ -26,6 +26,10 @@ TRACEPARENT = f"00-{TRACE_ID:032x}-00f067aa0ba902b7-01"
 # Longer than the 8192 characters opentelemetry-api 1.45.1 accepts. Before 1.45.1 a header like this
 # was parsed in quadratic time with no bound (Dependabot alert #1, #13).
 OVERSIZED_TRACESTATE = ",".join(f"k{i}=v{i}" for i in range(900))
+# A traceparent of a later version, whose trailing fields a parser must accept, longer than the 512
+# characters opentelemetry-api 1.45.2 accepts. Up to 1.45.1 the api ran it through a regex that
+# backtracks in quadratic time and continued its trace (Dependabot alert #2, GHSA-mf5v-w3w3-f6cg, #19).
+OVERSIZED_TRACEPARENT = f"01-{TRACE_ID:032x}-00f067aa0ba902b7-01-" + "a" * 512
 
 
 @pytest.fixture(scope="session")
@@ -146,8 +150,8 @@ def test_ban_topics_passes_prompts_outside_the_banned_topics(client, prompt):
     assert response.json()["scanners"]["BanTopics"] <= 0
 
 
-def test_installed_opentelemetry_api_has_the_tracestate_fix():
-    assert Version(importlib.metadata.version("opentelemetry-api")) >= Version("1.45.1")
+def test_installed_opentelemetry_api_has_the_tracestate_and_traceparent_fixes():
+    assert Version(importlib.metadata.version("opentelemetry-api")) >= Version("1.45.2")
 
 
 def test_tracing_is_configured(client):
@@ -168,6 +172,14 @@ def test_oversized_tracestate_is_discarded(client, span_exporter, caplog):
     assert span.parent.trace_id == TRACE_ID
     assert dict(span.context.trace_state) == {}
     assert "tracestate header exceeded the maximum length of 8192 characters" in caplog.messages
+
+
+def test_oversized_traceparent_is_discarded(client, span_exporter, caplog):
+    span = _server_span(client, span_exporter, {"traceparent": OVERSIZED_TRACEPARENT})
+
+    assert span.parent is None
+    assert span.context.trace_id != TRACE_ID
+    assert "traceparent header exceeded the maximum length of 512 characters" in caplog.messages
 
 
 def test_prometheus_metrics_count_requests(client):

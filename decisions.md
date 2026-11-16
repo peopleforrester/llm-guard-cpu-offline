@@ -235,3 +235,32 @@ built from `31962f2` with `--pull --no-cache`, was signed with cosign 2.6.5 (tlo
 2026-10-29 on that build: 1,650 MB compressed, trivy 0 critical and 27 unique critical-and-high, ready
 in 16 to 19 s on the shipped config. The README now names cpu.5 as the current image and keeps cpu.4
 as the last PromptInjection-only build.
+
+## 2026-11-15: OpenTelemetry overrides moved to 1.45.2 past the traceparent fix (#19)
+
+Dependabot alert #2 (GHSA-mf5v-w3w3-f6cg, CVE-2026-126360, medium): up to and including 1.45.1,
+opentelemetry-api's `TraceContextTextMapPropagator.extract()` matches `traceparent` with a regex that
+backtracks in quadratic time on a long whitespace run with an embedded newline. A conforming HTTP
+header cannot carry the newline, so the API's own FastAPI path is not the demonstrated exposure, but
+the installed version is what the alert reads and what consumers inherit:
+Unleash_an_Agent_Watch_It_Burn raises it as its alert 305 through the `images/llm-guard` submodule.
+1.45.2 (2026-10-29) rejects a `traceparent` longer than 512 characters before matching and drops the
+overlapping suffix expressions.
+
+**Decided:** the same route as #13. `overrides.txt` moves the whole set to the 1.45.2 release:
+opentelemetry-api, -sdk and -exporter-otlp-proto-http to 1.45.2, -instrumentation-fastapi and
+-exporter-prometheus to 0.66b2. `src/pyproject.toml` stays as upstream wrote it. A
+`uv pip compile --override overrides.txt` of `src/pyproject.toml[cpu]` on Python 3.12 resolves every
+opentelemetry package to 1.45.2 or 0.66b2, with -sdk-extension-aws 2.1.0 and -propagator-aws-xray
+1.0.2 still at upstream's pins. As with alert #1, the dependency graph reads `src/pyproject.toml`,
+so alert #2 does not close on merge and has to be dismissed as inaccurate, citing this entry.
+
+Tests: the unit suite checks the api override is at least 1.45.2. The venv E2E sends a version-01
+`traceparent` of 568 characters, which 1.45.1 accepts and continues and 1.45.2 discards with its
+warning, and checks the request starts a fresh trace. The image E2E checks the installed api is at
+least 1.45.2.
+
+| Package | Pin | Why |
+|---|---|---|
+| opentelemetry-api, -sdk, -exporter-otlp-proto-http | 1.45.2 (2026-10-29) | First release with the traceparent fix; current. |
+| opentelemetry-instrumentation-fastapi, -exporter-prometheus | 0.66b2 (2026-10-29) | Cut with 1.45.2, and they pin it. |

@@ -8,11 +8,14 @@
 #
 # OpenTelemetry (#13): opentelemetry-api 1.33.1 parses the W3C tracestate header in quadratic time with
 # no length bound (Dependabot alert #1), and FastAPIInstrumentor extracts it from every request.
-# 1.45.1 is the first release with the fix. The 1.x packages and the 0.x b-releases are cut together
-# and pin one another exactly, so the whole set moves at once. opentelemetry-sdk-extension-aws 2.1.0
-# and opentelemetry-propagator-aws-xray 1.0.2 accept any 1.x and stay at upstream's pins.
-opentelemetry-api==1.45.1
-opentelemetry-sdk==1.45.1
-opentelemetry-exporter-otlp-proto-http==1.45.1
-opentelemetry-instrumentation-fastapi==0.66b1
-opentelemetry-exporter-prometheus==0.66b1
+# 1.45.1 is the first release with the fix. Up to and including 1.45.1 the api also matches the
+# traceparent header with a regex that backtracks in quadratic time (Dependabot alert #2,
+# GHSA-mf5v-w3w3-f6cg, #19); 1.45.2 rejects a traceparent longer than 512 characters before matching.
+# The 1.x packages and the 0.x b-releases are cut together and pin one another exactly, so the whole
+# set moves at once. opentelemetry-sdk-extension-aws 2.1.0 and opentelemetry-propagator-aws-xray
+# 1.0.2 accept any 1.x and stay at upstream's pins.
+opentelemetry-api==1.45.2
+opentelemetry-sdk==1.45.2
+opentelemetry-exporter-otlp-proto-http==1.45.2
+opentelemetry-instrumentation-fastapi==0.66b2
+opentelemetry-exporter-prometheus==0.66b2

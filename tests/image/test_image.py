@@ -86,9 +86,9 @@ def test_missing_token_is_rejected(api):
     assert api("POST", "/analyze/prompt", "", {"prompt": BENIGN})["status"] == 403
 
 
-def test_opentelemetry_api_has_the_tracestate_fix(container):
+def test_opentelemetry_api_has_the_tracestate_and_traceparent_fixes(container):
     version = docker("exec", container, "python", "-c", "import importlib.metadata as m; print(m.version('opentelemetry-api'))")
-    assert Version(version.stdout.strip()) >= Version("1.45.1")
+    assert Version(version.stdout.strip()) >= Version("1.45.2")
 
 
 def test_prometheus_metrics_count_requests(api):

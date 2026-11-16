@@ -12,6 +12,8 @@ OVERRIDES_FILE = REPO_ROOT / "overrides.txt"
 DOCKERFILE = parse(REPO_ROOT / "Dockerfile")
 # Dependabot alert #1: opentelemetry-api's tracestate parsing is fixed in this release.
 TRACESTATE_FIX = Version("1.45.1")
+# Dependabot alert #2 (GHSA-mf5v-w3w3-f6cg): its traceparent parsing is fixed in this release.
+TRACEPARENT_FIX = Version("1.45.2")
 
 
 def _overrides() -> dict[str, Requirement]:
@@ -41,6 +43,10 @@ def test_every_override_is_an_exact_pin_of_a_package_upstream_declares():
 
 def test_opentelemetry_api_is_past_the_tracestate_fix():
     assert _pinned_version(_overrides()["opentelemetry-api"]) >= TRACESTATE_FIX
+
+
+def test_opentelemetry_api_is_past_the_traceparent_fix():
+    assert _pinned_version(_overrides()["opentelemetry-api"]) >= TRACEPARENT_FIX
 
 
 def test_every_package_of_upstreams_opentelemetry_release_moves_together():
