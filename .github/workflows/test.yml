@@ -34,4 +34,8 @@ jobs:
       # The E2E holds a CPU torch venv and the guard image's build stages at once; the runner's
       # preinstalled Android SDK, .NET and GHC are the space it needs.
       - run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc && df -h /
+      # tests/handoff reads public issues through the GitHub API; the job's own token keeps it clear of
+      # the anonymous rate limit the runner's address shares.
       - run: tests/e2e/run.sh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

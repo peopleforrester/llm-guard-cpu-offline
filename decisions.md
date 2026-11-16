@@ -264,3 +264,16 @@ least 1.45.2.
 |---|---|---|
 | opentelemetry-api, -sdk, -exporter-otlp-proto-http | 1.45.2 (2026-10-29) | First release with the traceparent fix; current. |
 | opentelemetry-instrumentation-fastapi, -exporter-prometheus | 0.66b2 (2026-10-29) | Cut with 1.45.2, and they pin it. |
+
+## 2026-11-15: A test checks that Unleash_an_Agent_Watch_It_Burn#1475 names the #19 commit (#21)
+
+#19's last criterion is a handoff: the commit that moved OpenTelemetry to 1.45.2 is named on
+Unleash_an_Agent_Watch_It_Burn#1475, so that repo can move its `images/llm-guard` submodule pointer to
+it. No file here records that, so only the consumer's issue can show it.
+
+**Decided:** `tests/handoff/test_unleash_1475.py` reads the issue and its comments through the public
+GitHub API and fails unless one of them carries the commit's sha, whole or as a prefix of 7 or more
+characters. It also checks that the commit is published here and its message closes #19. The sha is
+pinned in the test rather than found with `git log`, because CI's checkout is shallow and would not
+hold it. It needs the network, so it runs as the last step of `tests/e2e/run.sh`, outside the
+no-network E2E, with CI's job token to stay clear of the anonymous rate limit. Standard library only.

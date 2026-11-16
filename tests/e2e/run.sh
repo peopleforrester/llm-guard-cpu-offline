@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ABOUTME: End-to-end run: installs the API the way the Dockerfile does and scans it with no network, then
-# ABOUTME: builds the image itself and scans through it under --network none, as a default-deny pod does.
+# ABOUTME: builds the image and scans it under --network none, then checks the consumer handoff on GitHub.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -25,10 +25,10 @@ docker info >/dev/null || {
 TORCH_PIN="$(grep -o 'torch==[0-9][0-9.]*' "$REPO_ROOT/Dockerfile")"
 [ "$(wc -l <<<"$TORCH_PIN")" -eq 1 ] || { echo "Expected one torch pin in Dockerfile" >&2; exit 1; }
 
-echo "[1/6] Python 3.12 environment in $VENV"
+echo "[1/7] Python 3.12 environment in $VENV"
 [ -x "$VENV/bin/python" ] || uv venv --quiet --python 3.12 "$VENV"
 
-echo "[2/6] $TORCH_PIN from the PyTorch CPU index, then src[cpu] with overrides.txt, as the Dockerfile installs them"
+echo "[2/7] $TORCH_PIN from the PyTorch CPU index, then src[cpu] with overrides.txt, as the Dockerfile installs them"
 uv pip install --python "$VENV/bin/python" "$TORCH_PIN" --index-url https://download.pytorch.org/whl/cpu
 uv pip install --python "$VENV/bin/python" --override "$REPO_ROOT/overrides.txt" "$REPO_ROOT/src[cpu]" -r "$REPO_ROOT/tests/e2e/requirements.txt"
 "$VENV/bin/python" - <<'EOF'
@@ -38,11 +38,11 @@ if cuda:
     raise SystemExit(f"CUDA packages resolved into a CPU-only install: {cuda}")
 EOF
 
-echo "[3/6] Weights from the model image pinned in Dockerfile, and the zero-shot files model-zero-shot/ pins"
+echo "[3/7] Weights from the model image pinned in Dockerfile, and the zero-shot files model-zero-shot/ pins"
 "$VENV/bin/python" -I "$REPO_ROOT/tests/e2e/fetch_weights.py" "$WEIGHTS"
 "$VENV/bin/python" -I "$REPO_ROOT/tests/e2e/fetch_zero_shot.py" "$ZS_WEIGHTS"
 
-echo "[4/6] Scanning with no network"
+echo "[4/7] Scanning with no network"
 cd "$REPO_ROOT"
 unshare -rn env \
   WIB_PI_MODEL_DIR="$WEIGHTS" \
@@ -52,8 +52,11 @@ unshare -rn env \
   HF_DATASETS_OFFLINE=1 \
   "$VENV/bin/python" -m pytest tests/e2e "$@"
 
-echo "[5/6] Building the image as $IMAGE"
+echo "[5/7] Building the image as $IMAGE"
 docker build --tag "$IMAGE" "$REPO_ROOT"
 
-echo "[6/6] Scanning through the image under --network none"
+echo "[6/7] Scanning through the image under --network none"
 E2E_IMAGE="$IMAGE" "$VENV/bin/python" -m pytest tests/image "$@"
+
+echo "[7/7] Checking through the GitHub API that Unleash_an_Agent_Watch_It_Burn#1475 names the commit fixing #19"
+"$VENV/bin/python" -m pytest tests/handoff "$@"

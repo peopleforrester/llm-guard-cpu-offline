@@ -62,7 +62,8 @@ overrides.txt   packaging-owned overrides of upstream's pins (OpenTelemetry, #13
 model/          the prompt-injection weights as a scratch image, with provenance
 model-zero-shot/ the BanTopics zero-shot weights as a scratch image, with provenance
 config/         the image's default scanners.yml: PromptInjection and BanTopics, from the baked-in models
-tests/          unit tests (Dockerfiles, config, entrypoint) and the no-network E2E
+tests/          unit tests (Dockerfiles, config, entrypoint), the no-network E2E, and handoff/:
+                checks on GitHub that a consumer's issue names the commit it moves to
 ```
 
 ## The models
