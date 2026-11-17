@@ -277,3 +277,16 @@ characters. It also checks that the commit is published here and its message clo
 pinned in the test rather than found with `git log`, because CI's checkout is shallow and would not
 hold it. It needs the network, so it runs as the last step of `tests/e2e/run.sh`, outside the
 no-network E2E, with CI's job token to stay clear of the anonymous rate limit. Standard library only.
+
+## 2026-11-17: Alert #2 is dismissed as inaccurate, naming the commit that carries 1.45.2 (#20)
+
+The 2026-11-15 entry (#19) leaves alert #2 open by design, because the dependency graph reads
+`src/pyproject.toml` and its 1.33.1 pin. The commit carrying the 1.45.2 overrides is
+ea3cad36ee152d424ace9140527d3c9db75b80a2, on main since 2026-11-16.
+
+**Decided:** the alert is dismissed with reason `inaccurate` and this comment, so the alert, the
+commit and the decision can each be found from the others:
+
+> The image installs opentelemetry-api 1.45.2 through overrides.txt (commit
+> ea3cad36ee152d424ace9140527d3c9db75b80a2); src/pyproject.toml keeps upstream's 1.33.1 pin by
+> design. See decisions.md, 2026-11-15 entry.
